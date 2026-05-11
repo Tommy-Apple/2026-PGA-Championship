@@ -252,14 +252,10 @@ function DraftBoard({ state, onMakePick, onReset, syncing, firebaseReady }) {
             <span style={s.clockRound}>Round {getRoundForPick(pickIndex)} · Pick {pickIndex + 1}</span>
           </div>
           <div style={s.clockRight}>
-            {currentTeam.phone && (
-              <a
-                href={getSMSLink(currentTeam.phone,
-                  `🏌️ You're on the clock! Pick ${pickIndex + 1} of ${TOTAL_PICKS} — PGA Championship 2026 Fantasy Draft. Round ${getRoundForPick(pickIndex)}. Make your pick!`
-                )}
-                style={s.smsBtn}
-              >📲 Notify</a>
-            )}
+            <a
+              href={`sms:&body=${encodeURIComponent(`🏌️ ${currentTeam.name} is on the clock! Pick ${pickIndex + 1} of ${TOTAL_PICKS} — PGA Championship 2026 Fantasy Draft. Round ${getRoundForPick(pickIndex)}.`)}`}
+              style={s.smsBtn}
+            >📲 Notify Group</a>
             <button style={s.makePickBtn} onClick={() => setShowPicker(true)}>Make Pick</button>
           </div>
         </div>
@@ -271,12 +267,12 @@ function DraftBoard({ state, onMakePick, onReset, syncing, firebaseReady }) {
 
       {smsPrompt && (
         <div style={s.smsPromptBar}>
-          <span>Text <strong>{smsPrompt.name}</strong> they're on deck?</span>
+          <span><strong>{smsPrompt.name}</strong> is on deck — notify the group?</span>
           <a
-            href={getSMSLink(smsPrompt.phone, `⛳ You're on deck in the PGA 2026 Fantasy Draft! You're picking next — get ready!`)}
+            href={`sms:&body=${encodeURIComponent(`⛳ Heads up — ${smsPrompt.name} is on deck in the PGA 2026 Fantasy Draft! You're up next, get ready!`)}`}
             style={s.smsSendBtn}
             onClick={() => setSmsPrompt(null)}
-          >Open iMessage</a>
+          >📲 Open Group Text</a>
           <button style={s.smsDismiss} onClick={() => setSmsPrompt(null)}>✕</button>
         </div>
       )}
