@@ -38,12 +38,10 @@ const PGA_GOLFERS = [
   "Jhonattan Vegas", "David Lipsky", "Alex Smalley", "Max McGreevy",
   "Andrew Novak", "Steven Fisk", "Ryan Gerard", "Ben Kern",
   "Austin Smotherman", "Sam Stevens", "Rico Hoey", "Joe Highsmith",
-  "Chris Gotterup", "Jordan Gumberg", "Jake Knapp", "Matt McCarty",
-  "William Mouw", "Rasmus Neergaard-Petersen", "Kristoffer Reitan",
-  "Daniel Hillier", "David Puig", "Angel Ayora", "Aldrich Potgieter",
-  "Michael Thorbjornsen", "Austin Hurt", "Bud Cauley", "Ian Holt",
-  "Michael Block", "Michael Brennan", "Jacob Bridgeman",
-  // Alternates
+  "Jordan Gumberg", "Jake Knapp", "Matt McCarty", "William Mouw",
+  "Rasmus Neergaard-Petersen", "Kristoffer Reitan", "Daniel Hillier", "David Puig",
+  "Angel Ayora", "Michael Thorbjornsen", "Austin Hurt", "Bud Cauley",
+  "Ian Holt", "Michael Block", "Michael Brennan", "Jacob Bridgeman",
   "Sudarshan Yellamaraju", "Tom Hoge", "Kevin Yu", "Mac Meissner",
   "Tony Finau", "Kevin Roy", "Davis Thompson",
 ];
