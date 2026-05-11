@@ -157,7 +157,12 @@ function GolferPicker({ available, onPick, currentTeam }) {
         placeholder="Search golfers…"
         value={search}
         autoFocus
-        autoComplete="off"
+        autoComplete="new-password"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={false}
+        data-lpignore="true"
+        data-form-type="other"
         onChange={e => { setSearch(e.target.value); setSelected(null); }}
       />
       <div style={s.golferList}>
