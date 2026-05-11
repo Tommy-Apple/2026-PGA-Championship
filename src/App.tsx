@@ -281,7 +281,7 @@ function DraftBoard({ state, onMakePick, onReset, syncing, firebaseReady }) {
 
       {/* Tabs */}
       <div style={s.tabs}>
-        {[["board", "📋 Draft Board"], ["teams", "👥 Rosters"]].map(([id, label]) => (
+        {[["board", "📋 Draft Board"], ["teams", "👥 Rosters"], ["rules", "📜 Rules"]].map(([id, label]) => (
           <button
             key={id}
             style={{ ...s.tab, ...(activeTab === id ? s.tabActive : {}) }}
@@ -336,6 +336,45 @@ function DraftBoard({ state, onMakePick, onReset, syncing, firebaseReady }) {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Rules view */}
+      {activeTab === "rules" && (
+        <div style={s.rulesWrap}>
+          <div style={s.rulesCard}>
+            <div style={s.rulesTitle}>📜 League Rules</div>
+            <div style={s.rulesList}>
+              <div style={s.ruleItem}>
+                <span style={s.ruleIcon}>⛳</span>
+                <div>
+                  <div style={s.ruleHeading}>Scoring</div>
+                  <div style={s.ruleText}>Your top 4 golfer scores count toward your team total. Lowest combined score wins.</div>
+                </div>
+              </div>
+              <div style={s.ruleItem}>
+                <span style={s.ruleIcon}>✂️</span>
+                <div>
+                  <div style={s.ruleHeading}>Cut Rule</div>
+                  <div style={s.ruleText}>You must have at least 4 players make the cut to be eligible to win.</div>
+                </div>
+              </div>
+              <div style={s.ruleItem}>
+                <span style={s.ruleIcon}>🏆</span>
+                <div>
+                  <div style={s.ruleHeading}>Winner Bonus</div>
+                  <div style={s.ruleText}>If your team includes the tournament winner, you receive an additional <strong style={{color: GOLD}}>-2 strokes</strong> applied to your score.</div>
+                </div>
+              </div>
+              <div style={s.ruleItem}>
+                <span style={s.ruleIcon}>💰</span>
+                <div>
+                  <div style={s.ruleHeading}>Payouts</div>
+                  <div style={s.ruleText}>Entry fee is <strong style={{color: GOLD}}>$75 per team</strong>. 1st place takes the pot. 2nd place gets their money back.</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -708,4 +747,21 @@ const s = {
     fontWeight: 700, cursor: "pointer", fontFamily: "inherit", marginTop: 4,
   },
   confirmDisabled: { background: "rgba(255,255,255,0.06)", color: GRAY, cursor: "not-allowed" },
+  rulesWrap: { padding: 20, maxWidth: 640, margin: "0 auto" },
+  rulesCard: {
+    background: "rgba(255,255,255,0.03)", border: "1px solid rgba(201,168,64,0.2)",
+    borderRadius: 14, overflow: "hidden",
+  },
+  rulesTitle: {
+    padding: "16px 24px", fontSize: 18, fontWeight: 700, color: GOLD,
+    borderBottom: "1px solid rgba(255,255,255,0.07)", background: "rgba(201,168,64,0.07)",
+  },
+  rulesList: { padding: "8px 0" },
+  ruleItem: {
+    display: "flex", gap: 16, padding: "16px 24px",
+    borderBottom: "1px solid rgba(255,255,255,0.05)", alignItems: "flex-start",
+  },
+  ruleIcon: { fontSize: 22, flexShrink: 0, marginTop: 2 },
+  ruleHeading: { color: CREAM, fontWeight: 700, fontSize: 15, marginBottom: 4 },
+  ruleText: { color: GRAY, fontSize: 14, lineHeight: 1.6 },
 };
