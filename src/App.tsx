@@ -157,6 +157,7 @@ function GolferPicker({ available, onPick, currentTeam }) {
         placeholder="Search golfers…"
         value={search}
         autoFocus
+        autoComplete="off"
         onChange={e => { setSearch(e.target.value); setSelected(null); }}
       />
       <div style={s.golferList}>
