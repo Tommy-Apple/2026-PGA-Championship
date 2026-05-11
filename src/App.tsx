@@ -146,24 +146,26 @@ function GolferPicker({ available, onPick, currentTeam }) {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState(null);
   const filtered = available.filter(g => g.toLowerCase().includes(search.toLowerCase()));
+  // Inject placeholder CSS for contentEditable
+  if (typeof document !== "undefined" && !document.getElementById("ce-placeholder-style")) {
+    const style = document.createElement("style");
+    style.id = "ce-placeholder-style";
+    style.innerHTML = `[contenteditable][data-placeholder]:empty:before { content: attr(data-placeholder); color: rgba(255,255,255,0.3); pointer-events: none; }`;
+    document.head.appendChild(style);
+  }
 
   return (
     <div style={s.pickerWrap}>
       <div style={s.onClockBanner}>
         🔔 ON THE CLOCK: <strong>{currentTeam.name}</strong>
       </div>
-      <input
-        style={s.searchInput}
-        placeholder="Search golfers…"
-        value={search}
-        autoFocus
-        autoComplete="new-password"
-        autoCorrect="off"
-        autoCapitalize="off"
-        spellCheck={false}
-        data-lpignore="true"
-        data-form-type="other"
-        onChange={e => { setSearch(e.target.value); setSelected(null); }}
+      <div
+        style={{...s.searchInput, outline: "none", cursor: "text", minHeight: 20}}
+        contentEditable
+        suppressContentEditableWarning
+        data-placeholder="Search golfers…"
+        onInput={e => { setSearch((e.target as HTMLDivElement).innerText); setSelected(null); }}
+        onKeyDown={e => { if (e.key === "Enter") e.preventDefault(); }}
       />
       <div style={s.golferList}>
         {filtered.map(g => (
