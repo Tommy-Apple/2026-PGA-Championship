@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 
 const FIREBASE_URL = "https://YOUR-PROJECT-default-rtdb.firebaseio.com";
-const DRAFT_PATH = `${FIREBASE_URL}/pga-draft-2026.json`;
+const DRAFT_PATH = `${https://pga-championship-55d2f-default-rtdb.firebaseio.com}/pga-draft-2026.json`;
 const ESPN_API = "https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard";
 
 const TOTAL_TEAMS = 11;
