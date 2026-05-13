@@ -231,11 +231,11 @@ function Scoreboard({ draftState }) {
       {/* Cards */}
       <div style={sb.grid}>
         {sorted.map((team, i) => (
-          <div key={team.id} style={{ ...sb.card, ...(i === 0 ? sb.cardFirst : {}), ...(team.name === "Tommy Applebaum" ? sb.cardYou : {}) }}>
+          <div key={team.id} style={{ ...sb.card, ...(i === 0 ? sb.cardFirst : {}), {} }}>
             <div style={sb.cardHeader}>
               <div style={sb.rank}>{i === 0 ? "🏆" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`}</div>
               <div style={sb.teamMeta}>
-                <div style={sb.teamNameSb}>{team.name}{team.name === "Tommy Applebaum" ? " ⭐" : ""}</div>
+                <div style={sb.teamNameSb}>{team.name}</div>
                 {!team.hasFourMakeCut && <div style={sb.cutWarn}>⚠️ Needs 4 to make cut</div>}
               </div>
               <div style={sb.teamScoreBox}>
