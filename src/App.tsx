@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 
-const FIREBASE_URL = "https://pga-championship-55d2f-default-rtdb.firebaseio.com/";
+const FIREBASE_URL = "https://YOUR-PROJECT-default-rtdb.firebaseio.com";
 const DRAFT_PATH = `${FIREBASE_URL}/pga-draft-2026.json`;
 const ESPN_API = "https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard";
 
@@ -231,7 +231,7 @@ function Scoreboard({ draftState }) {
       {/* Cards */}
       <div style={sb.grid}>
         {sorted.map((team, i) => (
-          <div key={team.id} style={{ ...sb.card, ...(i === 0 ? sb.cardFirst : {}), {} }}>
+          <div key={team.id} style={{ ...sb.card, ...(i === 0 ? sb.cardFirst : {}) }}>
             <div style={sb.cardHeader}>
               <div style={sb.rank}>{i === 0 ? "🏆" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`}</div>
               <div style={sb.teamMeta}>
