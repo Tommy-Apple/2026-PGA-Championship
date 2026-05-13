@@ -134,7 +134,7 @@ function Scoreboard({ draftState }) {
 
   useEffect(() => {
     loadScores();
-    pollRef.current = setInterval(loadScores, 60000);
+    pollRef.current = setInterval(loadScores, 30000);
     return () => clearInterval(pollRef.current);
   }, []);
 
@@ -270,7 +270,7 @@ function Scoreboard({ draftState }) {
           </div>
         ))}
       </div>
-      <div style={sb.footer}>Scores auto-refresh every 60 seconds · Winner bonus applied manually after tournament ends</div>
+      <div style={sb.footer}>Scores auto-refresh every 30 seconds · Winner bonus applied manually after tournament ends</div>
     </div>
   );
 }
