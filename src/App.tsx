@@ -7,7 +7,7 @@ const ESPN_API = "https://site.api.espn.com/apis/site/v2/sports/golf/pga/scorebo
 const TOTAL_TEAMS = 11;
 const TOTAL_ROUNDS = 6;
 const TOTAL_PICKS = TOTAL_TEAMS * TOTAL_ROUNDS;
-
+ 
 const GREEN = "#1a6b3c";
 const GREEN_LIGHT = "#2d9b5a";
 const GOLD = "#c9a840";
