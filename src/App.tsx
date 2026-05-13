@@ -378,7 +378,6 @@ function DraftBoard({ state, onMakePick, onReset, syncing, firebaseReady }) {
           {syncing && <span style={s.syncing}>↑ Saving…</span>}
           {!isDraftComplete && <span style={s.pickCounter}>Pick {Math.min(pickIndex + 1, TOTAL_PICKS)} / {TOTAL_PICKS}</span>}
           <button style={copied ? s.copiedBtn : s.copyBtn} onClick={handleCopyLink}>{copied ? "✓ Copied!" : "🔗 Share"}</button>
-          <button style={s.resetBtn} onClick={onReset}>↺ Reset</button>
         </div>
       </div>
 
@@ -608,7 +607,6 @@ const s = {
   firebaseWarn: { fontSize: 11, color: GOLD },
   copyBtn: { background: "rgba(201,168,64,0.15)", border: `1px solid ${GOLD}`, color: GOLD, borderRadius: 6, padding: "6px 12px", fontSize: 12, cursor: "pointer", fontFamily: "inherit" },
   copiedBtn: { background: "rgba(45,155,90,0.2)", border: `1px solid ${GREEN_LIGHT}`, color: GREEN_LIGHT, borderRadius: 6, padding: "6px 12px", fontSize: 12, cursor: "pointer", fontFamily: "inherit" },
-  resetBtn: { background: "transparent", border: `1px solid rgba(255,255,255,0.15)`, color: GRAY, borderRadius: 6, padding: "6px 12px", fontSize: 12, cursor: "pointer", fontFamily: "inherit" },
   clockBar: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 24px", background: "linear-gradient(90deg, rgba(26,107,60,0.4) 0%, rgba(26,107,60,0.15) 100%)", borderBottom: `1px solid rgba(45,155,90,0.3)`, flexWrap: "wrap" as const, gap: 12 },
   clockLeft: { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" as const },
   clockDot: { width: 10, height: 10, background: "#4ade80", borderRadius: "50%", boxShadow: "0 0 8px #4ade80", flexShrink: 0 },
