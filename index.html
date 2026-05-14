@@ -259,12 +259,9 @@ async function loadScores() {
       scores[key] = { score, missedCut: statusName.includes('CUT') || statusName.includes('MISSED'), withdrawn: statusName.includes('WD') || statusName.includes('WITHDRAWN'), thru, position: c.status?.position?.displayValue || '', displayName };
     });
     scoreData = { scores };
-    // Debug: log first 5 players from ESPN
-    const keys = Object.keys(scores).slice(0, 5);
-    keys.forEach(k => console.log('ESPN player:', k, scores[k].score, scores[k].thru));
-    // Log raw status of first active player for debugging thru holes
+    // Debug: log full first active competitor
     const firstActive = competitors.find(c => c.status?.type?.name !== 'STATUS_SCHEDULED');
-    if (firstActive) console.log('Raw status:', JSON.stringify(firstActive.status));
+    if (firstActive) console.log('Full competitor:', JSON.stringify(firstActive));
     renderScoreboard();
   } catch(e) {
     console.error('Scores load error:', e);
