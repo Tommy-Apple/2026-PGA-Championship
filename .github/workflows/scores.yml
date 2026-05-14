@@ -1,0 +1,99 @@
+name: Fetch Golf Scores
+on:
+  schedule:
+    - cron: '*/2 * * * *'  # every 2 minutes
+  workflow_dispatch:  # manual trigger
+
+jobs:
+  fetch-scores:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch ESPN scores and write to Firebase
+        env:
+          FIREBASE_URL: ${{ secrets.FIREBASE_URL }}
+        run: |
+          node << 'EOF'
+          const https = require('https');
+
+          function fetchURL(url) {
+            return new Promise((resolve, reject) => {
+              https.get(url, (res) => {
+                let data = '';
+                res.on('data', chunk => data += chunk);
+                res.on('end', () => resolve(data));
+              }).on('error', reject);
+            });
+          }
+
+          function putToFirebase(url, data) {
+            return new Promise((resolve, reject) => {
+              const body = JSON.stringify(data);
+              const urlObj = new URL(url);
+              const options = {
+                hostname: urlObj.hostname,
+                path: urlObj.pathname + urlObj.search,
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Content-Length': Buffer.byteLength(body),
+                },
+              };
+              const req = https.request(options, (res) => {
+                let d = '';
+                res.on('data', chunk => d += chunk);
+                res.on('end', () => resolve(d));
+              });
+              req.on('error', reject);
+              req.write(body);
+              req.end();
+            });
+          }
+
+          async function main() {
+            const espnUrl = 'https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard';
+            const firebaseUrl = process.env.FIREBASE_URL;
+
+            console.log('Fetching ESPN scores...');
+            const raw = await fetchURL(espnUrl);
+            const espnData = JSON.parse(raw);
+
+            const competitors = espnData?.events?.[0]?.competitions?.[0]?.competitors || [];
+            console.log(`Found ${competitors.length} players`);
+
+            const scores = {};
+            competitors.forEach(c => {
+              const name = (c.athlete?.displayName || '').toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ').trim();
+              const scoreVal = c.score?.displayValue;
+              const status = c.status?.type?.name || '';
+              const thru = c.status?.thru;
+              const pos = c.status?.position?.displayValue || '';
+
+              let score = null;
+              if (scoreVal === 'E') score = 0;
+              else if (scoreVal) {
+                const n = parseInt(scoreVal);
+                if (!isNaN(n)) score = n;
+              }
+
+              scores[name] = {
+                score,
+                missedCut: status.includes('CUT') || status.includes('MISSED'),
+                withdrawn: status.includes('WD') || status.includes('WITHDRAWN'),
+                thru: thru ? `Thru ${thru}` : (status === 'STATUS_FINISHED' ? 'F' : '--'),
+                position: pos,
+                displayName: c.athlete?.displayName || '',
+              };
+            });
+
+            const payload = {
+              scores,
+              lastUpdated: new Date().toISOString(),
+            };
+
+            console.log('Writing to Firebase...');
+            await putToFirebase(`${firebaseUrl}/pga-scores-2026.json`, payload);
+            console.log('Done!');
+          }
+
+          main().catch(e => { console.error(e); process.exit(1); });
+          EOF
