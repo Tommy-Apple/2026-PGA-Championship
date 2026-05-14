@@ -1,8 +1,8 @@
 name: Fetch Golf Scores
 on:
   schedule:
-    - cron: '*/2 * * * *'  # every 2 minutes
-  workflow_dispatch:  # manual trigger
+    - cron: '*/2 * * * *'
+  workflow_dispatch:
 
 jobs:
   fetch-scores:
@@ -17,7 +17,7 @@ jobs:
 
           function fetchURL(url) {
             return new Promise((resolve, reject) => {
-              https.get(url, (res) => {
+              https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0' } }, (res) => {
                 let data = '';
                 res.on('data', chunk => data += chunk);
                 res.on('end', () => resolve(data));
@@ -41,7 +41,7 @@ jobs:
               const req = https.request(options, (res) => {
                 let d = '';
                 res.on('data', chunk => d += chunk);
-                res.on('end', () => resolve(d));
+                res.on('end', () => { console.log('Firebase response:', res.statusCode); resolve(d); });
               });
               req.on('error', reject);
               req.write(body);
@@ -60,14 +60,23 @@ jobs:
             const competitors = espnData?.events?.[0]?.competitions?.[0]?.competitors || [];
             console.log(`Found ${competitors.length} players`);
 
+            // Log first player to debug structure
+            if (competitors.length > 0) {
+              const first = competitors[0];
+              console.log('Sample player:', JSON.stringify({
+                name: first.athlete?.displayName,
+                score: first.score,
+                status: first.status,
+              }, null, 2));
+            }
+
             const scores = {};
             competitors.forEach(c => {
-              const name = (c.athlete?.displayName || '').toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ').trim();
+              const displayName = c.athlete?.displayName || '';
+              const key = displayName.toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ').trim();
+              
+              // Score is in c.score.displayValue (e.g. "-4", "E", "+2")
               const scoreVal = c.score?.displayValue;
-              const status = c.status?.type?.name || '';
-              const thru = c.status?.thru;
-              const pos = c.status?.position?.displayValue || '';
-
               let score = null;
               if (scoreVal === 'E') score = 0;
               else if (scoreVal) {
@@ -75,22 +84,41 @@ jobs:
                 if (!isNaN(n)) score = n;
               }
 
-              scores[name] = {
+              // Status
+              const statusName = c.status?.type?.name || '';
+              const statusDesc = c.status?.type?.description || '';
+              
+              // Thru holes - check multiple possible locations
+              const thruVal = c.status?.thru || c.linescores?.[0]?.linescores?.length;
+              let thruDisplay = '--';
+              if (statusDesc === 'Final' || statusName === 'STATUS_FINISHED') {
+                thruDisplay = 'F';
+              } else if (thruVal) {
+                thruDisplay = `Thru ${thruVal}`;
+              }
+
+              // Position
+              const pos = c.status?.position?.displayValue || '';
+
+              scores[key] = {
                 score,
-                missedCut: status.includes('CUT') || status.includes('MISSED'),
-                withdrawn: status.includes('WD') || status.includes('WITHDRAWN'),
-                thru: thru ? `Thru ${thru}` : (status === 'STATUS_FINISHED' ? 'F' : '--'),
+                missedCut: statusName.includes('CUT') || statusName.includes('MISSED'),
+                withdrawn: statusName.includes('WD') || statusName.includes('WITHDRAWN'),
+                thru: thruDisplay,
                 position: pos,
-                displayName: c.athlete?.displayName || '',
+                displayName,
+                rawScore: scoreVal,
+                rawStatus: statusName,
               };
             });
 
-            const payload = {
-              scores,
-              lastUpdated: new Date().toISOString(),
-            };
+            // Log a few scores to verify
+            const sampleKeys = Object.keys(scores).slice(0, 3);
+            sampleKeys.forEach(k => console.log(`${k}:`, JSON.stringify(scores[k])));
 
-            console.log('Writing to Firebase...');
+            const payload = { scores, lastUpdated: new Date().toISOString() };
+
+            console.log(`Writing ${Object.keys(scores).length} players to Firebase...`);
             await putToFirebase(`${firebaseUrl}/pga-scores-2026.json`, payload);
             console.log('Done!');
           }
