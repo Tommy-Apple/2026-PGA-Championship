@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 
-const FIREBASE_URL = "https://pga-championship-55d2f-default-rtdb.firebaseio.com/pga-scores-2026";
+const FIREBASE_URL = "https://pga-championship-55d2f-default-rtdb.firebaseio.com/";
 const DRAFT_PATH = `${FIREBASE_URL}/pga-draft-2026.json`;
 const SCORES_PATH = `${FIREBASE_URL}/pga-scores-2026.json`;
 
