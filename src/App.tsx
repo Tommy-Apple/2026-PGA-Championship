@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 
 const FIREBASE_URL = "https://pga-championship-55d2f-default-rtdb.firebaseio.com/";
 const DRAFT_PATH = `${FIREBASE_URL}/pga-draft-2026.json`;
-const ESPN_API = "https://corsproxy.io/?https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard";
+const SCORES_PATH = `${FIREBASE_URL}/pga-scores-2026.json`;
 
 const TOTAL_TEAMS = 11;
 const TOTAL_ROUNDS = 6;
@@ -122,13 +122,15 @@ function Scoreboard({ draftState }) {
 
   const loadScores = async () => {
     try {
-      const res = await fetch(ESPN_API);
+      const res = await fetch(SCORES_PATH);
       const data = await res.json();
-      setEspnData(data);
-      setLastUpdated(new Date());
-      setScoreError(null);
+      if (data && data.scores) {
+        setEspnData(data);
+        setLastUpdated(data.lastUpdated ? new Date(data.lastUpdated) : new Date());
+        setScoreError(null);
+      }
     } catch {
-      setScoreError("Could not load live scores from ESPN.");
+      setScoreError("Could not load scores from Firebase.");
     }
   };
 
@@ -140,25 +142,7 @@ function Scoreboard({ draftState }) {
 
   const buildTeams = () => {
     if (!draftState) return [];
-    const espnPlayers: Record<string, any> = {};
-    const competitors = espnData?.events?.[0]?.competitions?.[0]?.competitors || [];
-    competitors.forEach((c: any) => {
-      const name = normalizeName(c.athlete?.displayName || "");
-      const scoreVal = c.score?.displayValue;
-      const status = c.status?.type?.name || "";
-      const thru = c.status?.thru;
-      const pos = c.status?.position?.displayValue || "";
-      let score = null;
-      if (scoreVal === "E") score = 0;
-      else if (scoreVal) { const n = parseInt(scoreVal); if (!isNaN(n)) score = n; }
-      espnPlayers[name] = {
-        score,
-        missedCut: status.includes("CUT") || status.includes("MISSED"),
-        withdrawn: status.includes("WD") || status.includes("WITHDRAWN"),
-        thru: thru ? `Thru ${thru}` : (status === "STATUS_SCHEDULED" ? "–" : "F"),
-        position: pos,
-      };
-    });
+    const espnPlayers: Record<string, any> = espnData?.scores || {};
 
     return draftState.teams.map((team: any) => {
       const teamPicks = draftState.picks.filter((p: any) => p.teamId === team.id);
