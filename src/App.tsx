@@ -558,11 +558,46 @@ export default function App() {
     setLoading(false);
   };
 
+  const loadScoresApp = async () => {
+    if (!firebaseReady) return;
+    try {
+      const res = await fetch(SCORES_PATH);
+      const data = await res.json();
+      if (data && data.scores) setScoreData(data);
+    } catch {}
+  };
+
+  const triggerAction = async () => {
+    try {
+      await fetch(
+        "https://api.github.com/repos/Tommy-Apple/2026-PGA-Championship/actions/workflows/scores.yml/dispatches",
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${(import.meta as any).env.VITE_GH_PAT}`,
+            "Accept": "application/vnd.github+json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ ref: "main" }),
+        }
+      );
+    } catch {}
+  };
+
   useEffect(() => {
     loadState();
-    if (firebaseReady) { pollRef.current = setInterval(() => loadState(true), 4000); }
-    // Also kick off a scores refresh every 20s at the app level
-
+    loadScoresApp();
+    triggerAction();
+    if (firebaseReady) {
+      pollRef.current = setInterval(() => loadState(true), 4000);
+      scorePollRef.current = setInterval(loadScoresApp, 15000);
+      const triggerRef = setInterval(triggerAction, 90000);
+      return () => {
+        clearInterval(pollRef.current);
+        clearInterval(scorePollRef.current);
+        clearInterval(triggerRef);
+      };
+    }
     return () => clearInterval(pollRef.current);
   }, []);
 
