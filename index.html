@@ -164,7 +164,7 @@
 <script>
 const FIREBASE_URL = "https://pga-championship-55d2f-default-rtdb.firebaseio.com/";
 const DRAFT_PATH = FIREBASE_URL + "/pga-draft-2026.json";
-const SCORES_PATH = FIREBASE_URL + "/pga-scores-2026.json";
+const ESPN_URL = "https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard";
 const TOTAL_TEAMS = 11;
 const TOTAL_ROUNDS = 6;
 const TOTAL_PICKS = TOTAL_TEAMS * TOTAL_ROUNDS;
@@ -244,14 +244,34 @@ async function loadDraft() {
 async function loadScores() {
   document.getElementById('lastUpdated').textContent = 'Refreshing...';
   try {
-    const res = await fetch(SCORES_PATH);
+    const res = await fetch(ESPN_URL);
     const data = await res.json();
-    if (data && data.scores) {
-      scoreData = data;
-      const d = new Date(data.lastUpdated);
-      document.getElementById('lastUpdated').textContent = 'Updated ' + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
-      renderScoreboard();
-    }
+    const competitors = data?.events?.[0]?.competitions?.[0]?.competitors || [];
+    const scores = {};
+    competitors.forEach(c => {
+      const displayName = c.athlete?.displayName || '';
+      const key = normalizeName(displayName);
+      const scoreVal = c.score;
+      let score = null;
+      if (scoreVal === 'E' || scoreVal === 'Even') score = 0;
+      else if (scoreVal) { const n = parseInt(scoreVal, 10); if (!isNaN(n)) score = n; }
+      const statusName = c.status?.type?.name || '';
+      const statusDesc = c.status?.type?.description || '';
+      const thruVal = c.status?.thru;
+      let thru = '--';
+      if (statusDesc === 'Final' || statusName === 'STATUS_FINISHED') thru = 'F';
+      else if (thruVal) thru = 'Thru ' + thruVal;
+      const pos = c.status?.position?.displayValue || '';
+      scores[key] = {
+        score,
+        missedCut: statusName.includes('CUT') || statusName.includes('MISSED'),
+        withdrawn: statusName.includes('WD') || statusName.includes('WITHDRAWN'),
+        thru, position: pos, displayName,
+      };
+    });
+    scoreData = { scores };
+    document.getElementById('lastUpdated').textContent = 'Updated ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    renderScoreboard();
   } catch(e) {
     document.getElementById('lastUpdated').textContent = 'Could not load scores';
     console.error('Scores load error:', e);
@@ -397,8 +417,8 @@ function renderRosters() {
 // ── Init ──────────────────────────────────────────────────────────────────────
 loadDraft();
 loadScores();
-setInterval(loadScores, 15000);
-setInterval(loadDraft, 10000);
+setInterval(loadScores, 30000);
+setInterval(loadDraft, 15000);
 </script>
 </body>
 </html>
