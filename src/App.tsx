@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 
-const FIREBASE_URL = "https://pga-championship-55d2f-default-rtdb.firebaseio.com/";
+const FIREBASE_URL = "https://pga-championship-55d2f-default-rtdb.firebaseio.com/pga-scores-2026";
 const DRAFT_PATH = `${FIREBASE_URL}/pga-draft-2026.json`;
 const SCORES_PATH = `${FIREBASE_URL}/pga-scores-2026.json`;
 
@@ -234,8 +234,16 @@ function Scoreboard({ draftState, externalScoreData }) {
         </div>
         <div style={sb.controlRight}>
           <span style={sb.hint}>🏆 Toggle winner bonus (-2) after tournament:</span>
-          <button style={sb.refreshBtn} onClick={loadScores}>↻ Refresh</button>
+          <button style={sb.refreshBtn} onClick={() => { loadScores(); }}>↻ Refresh Scores</button>
         </div>
+      </div>
+
+      {/* Refresh bar */}
+      <div style={sb.refreshBar}>
+        <span style={sb.refreshHint}>Scores update automatically · Last updated: {lastUpdated ? lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "–"}</span>
+        <button style={sb.bigRefreshBtn} onClick={() => { loadScores(); }}>
+          ↻ Refresh Now
+        </button>
       </div>
 
       {/* Legend */}
@@ -743,4 +751,16 @@ const sb = {
   mcBadge: { fontSize: 10, background: "rgba(224,82,82,0.2)", color: RED, border: `1px solid ${RED}`, borderRadius: 3, padding: "1px 5px" },
   wdBadge: { fontSize: 10, background: "rgba(107,123,110,0.2)", color: GRAY, border: `1px solid ${GRAY}`, borderRadius: 3, padding: "1px 5px" },
   footer: { textAlign: "center" as const, padding: "14px 20px", fontSize: 11, color: GRAY, borderTop: "1px solid rgba(255,255,255,0.05)" },
+  refreshBar: {
+    display: "flex", alignItems: "center", justifyContent: "space-between",
+    padding: "10px 20px", background: "rgba(26,107,60,0.1)",
+    borderBottom: "1px solid rgba(45,155,90,0.2)", flexWrap: "wrap" as const, gap: 10,
+  },
+  refreshHint: { fontSize: 12, color: GRAY },
+  bigRefreshBtn: {
+    background: `linear-gradient(135deg, ${GREEN}, ${GREEN_LIGHT})`,
+    border: "none", color: "#fff", borderRadius: 8,
+    padding: "8px 20px", fontSize: 14, fontWeight: 700,
+    cursor: "pointer", fontFamily: "inherit",
+  },
 } as const;
