@@ -96,7 +96,22 @@ async function fbWrite(state) {
 }
 
 function normalizeName(name) {
-  return name.toLowerCase().replace(/\./g, "").replace(/\s+/g, " ").trim();
+  return name.toLowerCase()
+    .replace(/\./g, "")
+    .replace(/\s+/g, " ")
+    .replace(/ø/g, "o")
+    .replace(/å/g, "a")
+    .replace(/æ/g, "ae")
+    .replace(/é/g, "e")
+    .replace(/á/g, "a")
+    .replace(/í/g, "i")
+    .replace(/ó/g, "o")
+    .replace(/ú/g, "u")
+    .replace(/ñ/g, "n")
+    .replace(/ü/g, "u")
+    .replace(/ö/g, "o")
+    .replace(/ä/g, "a")
+    .trim();
 }
 
 function scoreColor(score) {
