@@ -1,13 +1,20 @@
 name: Fetch Golf Scores
 on:
   schedule:
-    - cron: '*/2 * * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
 
 jobs:
   fetch-scores:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       - name: Fetch ESPN scores and write to Firebase
         env:
           FIREBASE_URL: ${{ secrets.FIREBASE_URL }}
@@ -60,38 +67,26 @@ jobs:
             const competitors = espnData?.events?.[0]?.competitions?.[0]?.competitors || [];
             console.log(`Found ${competitors.length} players`);
 
-            // Log first player to debug structure
-            if (competitors.length > 0) {
-              const first = competitors[0];
-              console.log('Sample player:', JSON.stringify({
-                name: first.athlete?.displayName,
-                score: first.score,
-                scoreDisplayValue: first.score?.displayValue,
-                status: first.status?.type?.name,
-              }, null, 2));
-            }
-
             const scores = {};
             competitors.forEach(c => {
               const displayName = c.athlete?.displayName || '';
               const key = displayName.toLowerCase()
                 .replace(/\./g, '')
                 .replace(/\s+/g, ' ')
-                .replace(/ø/g, 'o')
-                .replace(/å/g, 'a')
-                .replace(/æ/g, 'ae')
-                .replace(/é/g, 'e')
-                .replace(/á/g, 'a')
-                .replace(/í/g, 'i')
-                .replace(/ó/g, 'o')
-                .replace(/ú/g, 'u')
-                .replace(/ñ/g, 'n')
-                .replace(/ü/g, 'u')
-                .replace(/ö/g, 'o')
-                .replace(/ä/g, 'a')
+                .replace(/\u00f8/g, 'o')
+                .replace(/\u00e5/g, 'a')
+                .replace(/\u00e6/g, 'ae')
+                .replace(/\u00e9/g, 'e')
+                .replace(/\u00e1/g, 'a')
+                .replace(/\u00ed/g, 'i')
+                .replace(/\u00f3/g, 'o')
+                .replace(/\u00fa/g, 'u')
+                .replace(/\u00f1/g, 'n')
+                .replace(/\u00fc/g, 'u')
+                .replace(/\u00f6/g, 'o')
+                .replace(/\u00e4/g, 'a')
                 .trim();
-              
-              // Score is in c.score (string like "-3", "E", "+2")
+
               const scoreVal = c.score;
               let score = null;
               if (scoreVal === 'E' || scoreVal === 'Even') score = 0;
@@ -100,12 +95,9 @@ jobs:
                 if (!isNaN(n)) score = n;
               }
 
-              // Status
               const statusName = c.status?.type?.name || '';
               const statusDesc = c.status?.type?.description || '';
-              
-              // Thru holes - check multiple possible locations
-              const thruVal = c.status?.thru || c.linescores?.[0]?.linescores?.length;
+              const thruVal = c.status?.thru;
               let thruDisplay = '--';
               if (statusDesc === 'Final' || statusName === 'STATUS_FINISHED') {
                 thruDisplay = 'F';
@@ -113,7 +105,6 @@ jobs:
                 thruDisplay = `Thru ${thruVal}`;
               }
 
-              // Position
               const pos = c.status?.position?.displayValue || '';
 
               scores[key] = {
@@ -123,17 +114,10 @@ jobs:
                 thru: thruDisplay,
                 position: pos,
                 displayName,
-                rawScore: scoreVal,
-                rawStatus: statusName,
               };
             });
 
-            // Log a few scores to verify
-            const sampleKeys = Object.keys(scores).slice(0, 3);
-            sampleKeys.forEach(k => console.log(`${k}:`, JSON.stringify(scores[k])));
-
             const payload = { scores, lastUpdated: new Date().toISOString() };
-
             console.log(`Writing ${Object.keys(scores).length} players to Firebase...`);
             await putToFirebase(`${firebaseUrl}/pga-scores-2026.json`, payload);
             console.log('Done!');
@@ -141,3 +125,12 @@ jobs:
 
           main().catch(e => { console.error(e); process.exit(1); });
           EOF
+
+      - name: Keep workflow active
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          echo "Last scores fetch: $(date)" > .scores-last-run
+          git add .scores-last-run
+          git diff --staged --quiet || git commit -m "scores: $(date -u +%H:%M)"
+          git push origin main
