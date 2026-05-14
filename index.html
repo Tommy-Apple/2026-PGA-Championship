@@ -251,17 +251,27 @@ async function loadScores() {
       if (scoreVal === 'E' || scoreVal === 'Even') score = 0;
       else if (scoreVal) { const n = parseInt(scoreVal, 10); if (!isNaN(n)) score = n; }
       const statusName = c.status?.type?.name || '';
-      const statusDesc = c.status?.type?.description || '';
-      const thruVal = c.status?.thru;
+      // Calculate thru from linescores — count completed holes in current round
       let thru = '--';
-      if (statusDesc === 'Final' || statusName === 'STATUS_FINISHED') thru = 'F';
-      else if (thruVal) thru = 'Thru ' + thruVal;
+      let currentRound = 1;
+      const linescores = c.linescores || [];
+      // Find the current round (last one with hole data)
+      let activeRound = null;
+      for (let i = linescores.length - 1; i >= 0; i--) {
+        if (linescores[i].linescores && linescores[i].linescores.length > 0) {
+          activeRound = linescores[i];
+          currentRound = i + 1;
+          break;
+        }
+      }
+      if (activeRound) {
+        const holesPlayed = activeRound.linescores.length;
+        if (holesPlayed === 18) thru = 'F' + (currentRound > 1 ? ' R' + currentRound : '');
+        else thru = 'Thru ' + holesPlayed;
+      }
       scores[key] = { score, missedCut: statusName.includes('CUT') || statusName.includes('MISSED'), withdrawn: statusName.includes('WD') || statusName.includes('WITHDRAWN'), thru, position: c.status?.position?.displayValue || '', displayName };
     });
     scoreData = { scores };
-    // Debug: log full first active competitor
-    const firstActive = competitors.find(c => c.status?.type?.name !== 'STATUS_SCHEDULED');
-    if (firstActive) console.log('Full competitor:', JSON.stringify(firstActive));
     renderScoreboard();
   } catch(e) {
     console.error('Scores load error:', e);
