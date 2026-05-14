@@ -1,8 +1,404 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>PGA Draft 2026</title></head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PGA Championship 2026 — Fantasy Draft</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0d1f0f; color: #faf7f0; font-family: Georgia, serif; min-height: 100vh; }
+  
+  /* Header */
+  .header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; background: rgba(0,0,0,0.4); border-bottom: 1px solid rgba(201,168,64,0.2); flex-wrap: wrap; gap: 8px; }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo-icon { font-size: 28px; }
+  .logo-title { font-size: 17px; font-weight: 700; color: #c9a840; line-height: 1.2; }
+  .logo-sub { font-size: 12px; color: #6b7b6e; }
+  .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .share-btn { background: rgba(201,168,64,0.15); border: 1px solid #c9a840; color: #c9a840; border-radius: 6px; padding: 6px 12px; font-size: 12px; cursor: pointer; font-family: inherit; }
+  .share-btn.copied { background: rgba(45,155,90,0.2); border-color: #2d9b5a; color: #2d9b5a; }
+
+  /* Tabs */
+  .tabs { display: flex; padding: 0 20px; border-bottom: 1px solid rgba(255,255,255,0.08); background: rgba(0,0,0,0.2); overflow-x: auto; }
+  .tab { background: transparent; border: none; border-bottom: 2px solid transparent; color: #6b7b6e; padding: 12px 18px; font-size: 13px; cursor: pointer; font-family: inherit; white-space: nowrap; }
+  .tab.active { color: #c9a840; border-bottom-color: #c9a840; }
+
+  /* Panels */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Scoreboard */
+  .refresh-bar { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; background: rgba(26,107,60,0.1); border-bottom: 1px solid rgba(45,155,90,0.2); flex-wrap: wrap; gap: 10px; }
+  .refresh-hint { font-size: 12px; color: #6b7b6e; }
+  .refresh-btn { background: linear-gradient(135deg, #1a6b3c, #2d9b5a); border: none; color: #fff; border-radius: 8px; padding: 8px 20px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; }
+  .legend { display: flex; gap: 16px; padding: 8px 20px; flex-wrap: wrap; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.15); font-size: 11px; color: #6b7b6e; }
+  .score-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; padding: 16px; }
+  .score-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; overflow: hidden; }
+  .score-card.first { border-color: rgba(74,222,128,0.4); background: rgba(74,222,128,0.04); }
+  .card-header { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .rank { font-size: 20px; width: 32px; text-align: center; flex-shrink: 0; }
+  .team-meta { flex: 1; }
+  .team-name-sb { font-weight: 700; font-size: 14px; color: #faf7f0; }
+  .cut-warn { font-size: 10px; color: #c9a840; margin-top: 2px; }
+  .score-box { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+  .big-score { font-size: 24px; font-weight: 700; }
+  .score-label { font-size: 9px; color: #6b7b6e; letter-spacing: 1px; }
+  .bonus-btn { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #6b7b6e; border-radius: 4px; padding: 2px 7px; font-size: 10px; cursor: pointer; font-family: inherit; }
+  .bonus-btn.on { background: rgba(201,168,64,0.2); border-color: #c9a840; color: #c9a840; }
+  .golfer-rows { padding: 4px 0; }
+  .golfer-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 14px; border-bottom: 1px solid rgba(255,255,255,0.03); opacity: 0.55; }
+  .golfer-row.counts { opacity: 1; background: rgba(45,155,90,0.07); }
+  .golfer-row.mc { opacity: 0.3; }
+  .golfer-left { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+  .counts-dot { color: #4ade80; font-size: 8px; }
+  .golfer-right { display: flex; align-items: center; gap: 8px; }
+  .g-score { font-size: 14px; font-weight: 700; }
+  .g-thru { font-size: 10px; color: #6b7b6e; }
+  .g-pos { font-size: 10px; color: #c9a840; }
+  .mc-badge { font-size: 10px; background: rgba(224,82,82,0.2); color: #e05252; border: 1px solid #e05252; border-radius: 3px; padding: 1px 5px; }
+  .wd-badge { font-size: 10px; background: rgba(107,123,110,0.2); color: #6b7b6e; border: 1px solid #6b7b6e; border-radius: 3px; padding: 1px 5px; }
+  .score-footer { text-align: center; padding: 14px 20px; font-size: 11px; color: #6b7b6e; border-top: 1px solid rgba(255,255,255,0.05); }
+  .green { color: #4ade80; }
+  .red { color: #e05252; }
+  .white { color: #faf7f0; }
+
+  /* Draft board */
+  .table-wrap { overflow-x: auto; padding: 16px 8px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 900px; }
+  th { padding: 8px 6px; color: #c9a840; font-weight: 700; text-align: center; background: rgba(0,0,0,0.2); font-size: 11px; max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  th.rd { color: #6b7b6e; width: 36px; }
+  td { padding: 5px 4px; text-align: center; border: 1px solid rgba(255,255,255,0.04); min-width: 80px; max-width: 90px; }
+  tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+  .pick-name { color: #faf7f0; font-size: 11px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 88px; }
+  .empty-cell { color: rgba(255,255,255,0.1); font-size: 10px; }
+  .filled { background: rgba(26,107,60,0.15); }
+
+  /* Rosters */
+  .rosters-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; padding: 16px; }
+  .roster-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; overflow: hidden; }
+  .roster-header { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: rgba(26,107,60,0.15); border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .roster-num { color: #c9a840; font-weight: 700; font-size: 12px; }
+  .roster-name { flex: 1; color: #faf7f0; font-weight: 700; font-size: 13px; }
+  .roster-count { color: #6b7b6e; font-size: 11px; }
+  .roster-picks { padding: 8px 14px; max-height: 220px; overflow-y: auto; }
+  .roster-pick { display: flex; gap: 8px; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.04); align-items: center; }
+  .pick-round { color: #6b7b6e; font-size: 10px; width: 24px; flex-shrink: 0; }
+  .pick-golfer { color: #faf7f0; font-size: 12px; }
+
+  /* Rules */
+  .rules-wrap { padding: 20px; max-width: 640px; margin: 0 auto; }
+  .rules-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(201,168,64,0.2); border-radius: 14px; overflow: hidden; }
+  .rules-title { padding: 16px 24px; font-size: 18px; font-weight: 700; color: #c9a840; border-bottom: 1px solid rgba(255,255,255,0.07); background: rgba(201,168,64,0.07); }
+  .rule-item { display: flex; gap: 16px; padding: 16px 24px; border-bottom: 1px solid rgba(255,255,255,0.05); align-items: flex-start; }
+  .rule-icon { font-size: 22px; flex-shrink: 0; margin-top: 2px; }
+  .rule-heading { color: #faf7f0; font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+  .rule-text { color: #6b7b6e; font-size: 14px; line-height: 1.6; }
+
+  /* Loading */
+  .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 200px; gap: 10px; color: #6b7b6e; font-size: 16px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span class="logo-icon">⛳</span>
+    <div>
+      <div class="logo-title">PGA Championship 2026</div>
+      <div class="logo-sub">Fantasy Draft · Aronimink</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="share-btn" id="shareBtn" onclick="copyLink()">🔗 Share</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('scoreboard')">🏆 Scoreboard</button>
+  <button class="tab" onclick="showTab('board')">📋 Draft Board</button>
+  <button class="tab" onclick="showTab('rosters')">👥 Rosters</button>
+  <button class="tab" onclick="showTab('rules')">📜 Rules</button>
+</div>
+
+<!-- SCOREBOARD -->
+<div id="scoreboard" class="panel active">
+  <div class="refresh-bar">
+    <span class="refresh-hint" id="lastUpdated">Loading scores...</span>
+    <button class="refresh-btn" onclick="loadScores()">↻ Refresh Now</button>
+  </div>
+  <div class="legend">
+    <span><span class="green">●</span> Counts toward team score (top 4)</span>
+    <span><span class="mc-badge">MC</span> Missed cut</span>
+    <span>⚠️ Needs 4 to make cut</span>
+    <span>🏆 +BONUS applies -2 after tournament ends</span>
+  </div>
+  <div class="score-grid" id="scoreGrid"><div class="loading"><div>⛳</div><div>Loading scoreboard...</div></div></div>
+  <div class="score-footer">Tap ↻ Refresh Now for latest scores · Winner bonus applied manually after tournament ends</div>
+</div>
+
+<!-- DRAFT BOARD -->
+<div id="board" class="panel">
+  <div class="table-wrap">
+    <table id="draftTable"><tr><td class="loading">Loading draft board...</td></tr></table>
+  </div>
+</div>
+
+<!-- ROSTERS -->
+<div id="rosters" class="panel">
+  <div class="rosters-grid" id="rostersGrid"><div class="loading">Loading rosters...</div></div>
+</div>
+
+<!-- RULES -->
+<div id="rules" class="panel">
+  <div class="rules-wrap">
+    <div class="rules-card">
+      <div class="rules-title">📜 League Rules</div>
+      <div class="rule-item"><span class="rule-icon">⛳</span><div><div class="rule-heading">Scoring</div><div class="rule-text">Your top 4 golfer scores count toward your team total. Lowest combined score wins.</div></div></div>
+      <div class="rule-item"><span class="rule-icon">✂️</span><div><div class="rule-heading">Cut Rule</div><div class="rule-text">You must have at least 4 players make the cut to be eligible to win.</div></div></div>
+      <div class="rule-item"><span class="rule-icon">🏆</span><div><div class="rule-heading">Winner Bonus</div><div class="rule-text">If your team includes the tournament winner, you receive an additional -2 strokes applied to your score.</div></div></div>
+      <div class="rule-item"><span class="rule-icon">💰</span><div><div class="rule-heading">Payouts</div><div class="rule-text">Entry fee is $75 per team. 1st place takes the pot. 2nd place gets their money back.</div></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const FIREBASE_URL = "https://YOUR-PROJECT-default-rtdb.firebaseio.com";
+const DRAFT_PATH = FIREBASE_URL + "/pga-draft-2026.json";
+const SCORES_PATH = FIREBASE_URL + "/pga-scores-2026.json";
+const TOTAL_TEAMS = 11;
+const TOTAL_ROUNDS = 6;
+const TOTAL_PICKS = TOTAL_TEAMS * TOTAL_ROUNDS;
+
+let draftState = null;
+let scoreData = null;
+let winnerBonus = {};
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+function showTab(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ── Share ─────────────────────────────────────────────────────────────────────
+function copyLink() {
+  navigator.clipboard.writeText(window.location.href);
+  const btn = document.getElementById('shareBtn');
+  btn.textContent = '✓ Copied!';
+  btn.classList.add('copied');
+  setTimeout(() => { btn.textContent = '🔗 Share'; btn.classList.remove('copied'); }, 2000);
+}
+
+// ── Snake draft helpers ───────────────────────────────────────────────────────
+function getTeamForPick(i) {
+  const round = Math.floor(i / TOTAL_TEAMS);
+  const pos = i % TOTAL_TEAMS;
+  return round % 2 === 0 ? pos : TOTAL_TEAMS - 1 - pos;
+}
+function getRoundForPick(i) { return Math.floor(i / TOTAL_TEAMS) + 1; }
+
+// ── Score helpers ─────────────────────────────────────────────────────────────
+function scoreColor(s) {
+  if (s === null || s === undefined) return 'white';
+  if (s < 0) return 'green';
+  if (s > 0) return 'red';
+  return 'white';
+}
+function formatScore(s) {
+  if (s === null || s === undefined) return '–';
+  if (s === 0) return 'E';
+  return s > 0 ? '+' + s : '' + s;
+}
+
+function normalizeName(name) {
+  return name.toLowerCase()
+    .replace(/\./g, '').replace(/\s+/g, ' ')
+    .replace(/ø/g, 'o').replace(/å/g, 'a')
+    .replace(/æ/g, 'ae').replace(/é/g, 'e')
+    .replace(/á/g, 'a').replace(/í/g, 'i')
+    .replace(/ó/g, 'o').replace(/ú/g, 'u')
+    .replace(/ñ/g, 'n').replace(/ü/g, 'u')
+    .replace(/ö/g, 'o').replace(/ä/g, 'a')
+    .trim();
+}
+
+// ── Load draft from Firebase ──────────────────────────────────────────────────
+async function loadDraft() {
+  try {
+    const res = await fetch(DRAFT_PATH);
+    const data = await res.json();
+    if (data) {
+      if (data.picks && !Array.isArray(data.picks)) data.picks = Object.values(data.picks);
+      if (data.teams && !Array.isArray(data.teams)) data.teams = Object.values(data.teams);
+      if (!data.picks) data.picks = [];
+      draftState = data;
+      renderBoard();
+      renderRosters();
+      renderScoreboard();
+    }
+  } catch(e) { console.error('Draft load error:', e); }
+}
+
+// ── Load scores from Firebase ─────────────────────────────────────────────────
+async function loadScores() {
+  document.getElementById('lastUpdated').textContent = 'Refreshing...';
+  try {
+    const res = await fetch(SCORES_PATH);
+    const data = await res.json();
+    if (data && data.scores) {
+      scoreData = data;
+      const d = new Date(data.lastUpdated);
+      document.getElementById('lastUpdated').textContent = 'Updated ' + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      renderScoreboard();
+    }
+  } catch(e) {
+    document.getElementById('lastUpdated').textContent = 'Could not load scores';
+    console.error('Scores load error:', e);
+  }
+}
+
+// ── Render Scoreboard ─────────────────────────────────────────────────────────
+function renderScoreboard() {
+  if (!draftState) return;
+  const rawScores = scoreData?.scores || {};
+
+  const teams = draftState.teams.map((team, idx) => {
+    const picks = draftState.picks.filter(p => p.teamId === team.id);
+    const golfers = picks.map(pick => {
+      const norm = normalizeName(pick.golfer);
+      let esp = rawScores[norm];
+      if (!esp) {
+        const key = Object.keys(rawScores).find(k => k.includes(norm) || norm.includes(k));
+        esp = key ? rawScores[key] : null;
+      }
+      return {
+        name: pick.golfer,
+        score: esp?.score ?? null,
+        missedCut: esp?.missedCut || false,
+        withdrawn: esp?.withdrawn || false,
+        thru: esp?.thru || '--',
+        position: esp?.position || '',
+      };
+    });
+
+    const active = golfers.filter(g => !g.missedCut && !g.withdrawn && g.score !== null).sort((a,b) => a.score - b.score);
+    const noScore = golfers.filter(g => !g.missedCut && !g.withdrawn && g.score === null);
+    const mc = golfers.filter(g => g.missedCut || g.withdrawn);
+    const sorted = [...active, ...noScore, ...mc];
+    const counting = active.slice(0, 4);
+    const countingNames = new Set(counting.map(g => g.name));
+    sorted.forEach(g => g.counts = countingNames.has(g.name));
+    const baseScore = counting.length > 0 ? counting.reduce((s,g) => s + g.score, 0) : null;
+    const bonus = winnerBonus[team.id] ? -2 : 0;
+    const teamScore = baseScore !== null ? baseScore + bonus : null;
+    const madeCut = golfers.filter(g => !g.missedCut && !g.withdrawn).length;
+    return { id: team.id, name: team.name, golfers: sorted, teamScore, hasFourMakeCut: madeCut >= 4, hasBonus: !!winnerBonus[team.id] };
+  });
+
+  const sorted = [...teams].sort((a,b) => {
+    if (a.teamScore === null && b.teamScore === null) return 0;
+    if (a.teamScore === null) return 1;
+    if (b.teamScore === null) return -1;
+    return a.teamScore - b.teamScore;
+  });
+
+  const medals = ['🏆','🥈','🥉'];
+  const grid = document.getElementById('scoreGrid');
+  grid.innerHTML = sorted.map((team, i) => `
+    <div class="score-card ${i === 0 ? 'first' : ''}">
+      <div class="card-header">
+        <div class="rank">${medals[i] || '#' + (i+1)}</div>
+        <div class="team-meta">
+          <div class="team-name-sb">${team.name}</div>
+          ${!team.hasFourMakeCut ? '<div class="cut-warn">⚠️ Needs 4 to make cut</div>' : ''}
+        </div>
+        <div class="score-box">
+          <div class="big-score ${scoreColor(team.teamScore)}">${formatScore(team.teamScore)}</div>
+          <div class="score-label">TOP 4</div>
+          <button class="bonus-btn ${team.hasBonus ? 'on' : ''}" onclick="toggleBonus('${team.id}')">🏆 ${team.hasBonus ? '-2 ON' : '+BONUS'}</button>
+        </div>
+      </div>
+      <div class="golfer-rows">
+        ${team.golfers.map(g => `
+          <div class="golfer-row ${g.counts ? 'counts' : ''} ${g.missedCut || g.withdrawn ? 'mc' : ''}">
+            <div class="golfer-left">
+              ${g.counts ? '<span class="counts-dot">●</span>' : ''}
+              <span>${g.name}</span>
+            </div>
+            <div class="golfer-right">
+              ${g.missedCut ? '<span class="mc-badge">MC</span>' :
+                g.withdrawn ? '<span class="wd-badge">WD</span>' :
+                `<span class="g-score ${scoreColor(g.score)}">${formatScore(g.score)}</span>
+                 <span class="g-thru">${g.thru}</span>
+                 ${g.position ? '<span class="g-pos">' + g.position + '</span>' : ''}`}
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function toggleBonus(teamId) {
+  winnerBonus[teamId] = !winnerBonus[teamId];
+  renderScoreboard();
+}
+
+// ── Render Draft Board ────────────────────────────────────────────────────────
+function renderBoard() {
+  if (!draftState) return;
+  const { teams, picks } = draftState;
+  const snakeOrder = Array.from({length: TOTAL_PICKS}, (_, i) => ({
+    pickNumber: i+1, round: getRoundForPick(i), team: getTeamForPick(i)
+  }));
+
+  let html = '<tr><th class="rd">Rd</th>';
+  teams.forEach(t => html += `<th>${t.name}</th>`);
+  html += '</tr>';
+
+  for (let r = 0; r < TOTAL_ROUNDS; r++) {
+    html += `<tr><td class="rd" style="color:#6b7b6e;font-weight:700;font-size:11px;text-align:center">${r+1}</td>`;
+    const roundSlots = snakeOrder.filter(o => o.round === r+1);
+    teams.forEach(team => {
+      const slot = roundSlots.find(o => o.team === team.id);
+      const pick = slot ? picks.find(p => p.pickNumber === slot.pickNumber) : null;
+      html += pick
+        ? `<td class="filled"><span class="pick-name">${pick.golfer}</span></td>`
+        : `<td><span class="empty-cell">—</span></td>`;
+    });
+    html += '</tr>';
+  }
+  document.getElementById('draftTable').innerHTML = html;
+}
+
+// ── Render Rosters ────────────────────────────────────────────────────────────
+function renderRosters() {
+  if (!draftState) return;
+  const { teams, picks } = draftState;
+  const html = teams.map((team, i) => {
+    const teamPicks = picks.filter(p => p.teamId === team.id);
+    return `<div class="roster-card">
+      <div class="roster-header">
+        <span class="roster-num">#${i+1}</span>
+        <span class="roster-name">${team.name}</span>
+        <span class="roster-count">${teamPicks.length} picks</span>
+      </div>
+      <div class="roster-picks">
+        ${teamPicks.length === 0 ? '<span style="color:#6b7b6e;font-size:12px;font-style:italic">No picks yet</span>' :
+          teamPicks.map(p => `<div class="roster-pick">
+            <span class="pick-round">R${getRoundForPick(p.pickNumber-1)}</span>
+            <span class="pick-golfer">${p.golfer}</span>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('rostersGrid').innerHTML = html;
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+loadDraft();
+loadScores();
+setInterval(loadScores, 15000);
+setInterval(loadDraft, 10000);
+</script>
+</body>
 </html>
