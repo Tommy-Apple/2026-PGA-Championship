@@ -66,7 +66,8 @@ jobs:
               console.log('Sample player:', JSON.stringify({
                 name: first.athlete?.displayName,
                 score: first.score,
-                status: first.status,
+                scoreDisplayValue: first.score?.displayValue,
+                status: first.status?.type?.name,
               }, null, 2));
             }
 
@@ -75,12 +76,12 @@ jobs:
               const displayName = c.athlete?.displayName || '';
               const key = displayName.toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ').trim();
               
-              // Score is in c.score.displayValue (e.g. "-4", "E", "+2")
-              const scoreVal = c.score?.displayValue;
+              // Score is in c.score (string like "-3", "E", "+2")
+              const scoreVal = c.score;
               let score = null;
-              if (scoreVal === 'E') score = 0;
+              if (scoreVal === 'E' || scoreVal === 'Even') score = 0;
               else if (scoreVal) {
-                const n = parseInt(scoreVal);
+                const n = parseInt(scoreVal, 10);
                 if (!isNaN(n)) score = n;
               }
 
