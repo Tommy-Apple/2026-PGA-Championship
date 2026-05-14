@@ -128,7 +128,7 @@ function formatScore(score) {
 }
 
 // ─── Scoreboard ───────────────────────────────────────────────────────────────
-function Scoreboard({ draftState }) {
+function Scoreboard({ draftState, externalScoreData }) {
   const [espnData, setEspnData] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [scoreError, setScoreError] = useState(null);
@@ -149,9 +149,17 @@ function Scoreboard({ draftState }) {
     }
   };
 
+  // Use externally fetched score data if available (avoids remounting issue)
+  useEffect(() => {
+    if (externalScoreData && externalScoreData.scores) {
+      setEspnData(externalScoreData);
+      setLastUpdated(externalScoreData.lastUpdated ? new Date(externalScoreData.lastUpdated) : new Date());
+    }
+  }, [externalScoreData]);
+
   useEffect(() => {
     loadScores();
-    pollRef.current = setInterval(loadScores, 30000);
+    pollRef.current = setInterval(loadScores, 20000);
     return () => clearInterval(pollRef.current);
   }, []);
 
@@ -341,7 +349,7 @@ function GolferPicker({ available, onPick, currentTeam }) {
 }
 
 // ─── DraftBoard ───────────────────────────────────────────────────────────────
-function DraftBoard({ state, onMakePick, onReset, syncing, firebaseReady }) {
+function DraftBoard({ state, onMakePick, onReset, syncing, firebaseReady, scoreData }) {
   const { teams, picks } = state;
   const pickIndex = picks.length;
   const isDraftComplete = pickIndex >= TOTAL_PICKS;
@@ -438,7 +446,7 @@ function DraftBoard({ state, onMakePick, onReset, syncing, firebaseReady }) {
         </div>
       )}
 
-      {activeTab === "scoreboard" && <Scoreboard draftState={state} />}
+      {activeTab === "scoreboard" && <Scoreboard draftState={state} externalScoreData={scoreData} />}
 
       {activeTab === "board" && (
         <div style={s.tableWrap}>
@@ -524,10 +532,12 @@ function DraftBoard({ state, onMakePick, onReset, syncing, firebaseReady }) {
 // ─── App ──────────────────────────────────────────────────────────────────────
 export default function App() {
   const [draftState, setDraftState] = useState(null);
+  const [scoreData, setScoreData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState(null);
   const pollRef = useRef(null);
+  const scorePollRef = useRef(null);
   const firebaseReady = !FIREBASE_URL.includes("YOUR-PROJECT");
 
   const loadState = async (silent = false) => {
@@ -551,6 +561,8 @@ export default function App() {
   useEffect(() => {
     loadState();
     if (firebaseReady) { pollRef.current = setInterval(() => loadState(true), 4000); }
+    // Also kick off a scores refresh every 20s at the app level
+
     return () => clearInterval(pollRef.current);
   }, []);
 
@@ -583,7 +595,7 @@ export default function App() {
       {!firebaseReady && <div style={s.setupWarning}>🔥 <strong>Firebase not configured.</strong> Paste your URL into FIREBASE_URL.</div>}
       {!draftState.setupDone
         ? <SetupScreen teams={draftState.teams} onSave={handleSetupSave} />
-        : <DraftBoard state={draftState} onMakePick={handleMakePick} onReset={handleReset} syncing={syncing} firebaseReady={firebaseReady} />}
+        : <DraftBoard state={draftState} onMakePick={handleMakePick} onReset={handleReset} syncing={syncing} firebaseReady={firebaseReady} scoreData={scoreData} />}
     </>
   );
 }
