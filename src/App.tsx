@@ -142,15 +142,26 @@ function Scoreboard({ draftState }) {
 
   const buildTeams = () => {
     if (!draftState) return [];
-    const espnPlayers: Record<string, any> = espnData?.scores || {};
+    // Firebase stores scores as object - normalize keys
+    const rawScores = espnData?.scores || {};
+    const espnPlayers: Record<string, any> = {};
+    Object.keys(rawScores).forEach(k => {
+      espnPlayers[k.toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ').trim()] = rawScores[k];
+    });
 
     return draftState.teams.map((team: any) => {
       const teamPicks = draftState.picks.filter((p: any) => p.teamId === team.id);
       const golfers = teamPicks.map((pick: any) => {
         const norm = normalizeName(pick.golfer);
+        // Try exact match first
         let espn = espnPlayers[norm];
+        // Try partial match
         if (!espn) {
-          const key = Object.keys(espnPlayers).find(k => k.includes(norm) || norm.includes(k));
+          const key = Object.keys(espnPlayers).find(k =>
+            k.includes(norm) || norm.includes(k) ||
+            // Handle special chars like accents (Aberg, Hojgaard, Niemann)
+            norm.replace(/[^a-z0-9 ]/g, '') === k.replace(/[^a-z0-9 ]/g, '')
+          );
           espn = key ? espnPlayers[key] : null;
         }
         return {
